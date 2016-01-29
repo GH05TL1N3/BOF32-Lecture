@@ -1,0 +1,92 @@
+String Instruction
+
+- MOVS / (MOVS / MOVSW / MOVSD)
+- CMPS  ~Compare
+- SCAS ~Substrack
+- LODS ~Load
+
+ESI and EDI register are typically used with DF
+
+; Filename: String.nasm
+; Author: Anuwat
+
+global _start
+
+section .text
+
+_start:
+
+        ; copy string from source to destination
+
+        mov ecx, sourceLen
+        lea esi, [source]
+        lea edi, [destination]
+
+        cld ; clear DF Flag
+        rep movsb
+
+        ; print hello world using write sys_call
+
+        mov eax, 0x4
+        mov ebx, 0x1
+        mov ecx, destination
+        mov edx, sourceLen
+
+        int 0x80
+
+section .data
+
+        source: db "Hello Wordl!", 0xA
+        sourceLen equ $-source
+
+        comparison: db "Hello"
+
+        result1: db "String are Equal", 0xA
+        result1Len equ $-result1
+
+        result2: db "String are not Equal", 0xA
+        result2Len equ $-result2
+
+
+section .bss
+
+        destination: resb 100
+
+
+
+LIBC and NASM
+
+ - Define all libc functions you want use extern
+ - All argument in reverse oder on Stack
+    - CALL Function(a,b,c,d)
+    - push d, push c, push b, push a
+
+- Adjust the stack after calling libc function
+
+- Link with GCC rather than LD - use main instread of 
+  _start
+
+328 - 018
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

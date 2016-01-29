@@ -1,0 +1,323 @@
+----------
+----------
+File: Lechur
+Author: N0N4M3
+
+Control Instructions
+
+- Control the flow the program
+- Based on "events" e.g. calculation led t o0
+- Uses flags to determine decistion
+
+- Braching
+	Uncondition - JMP ~ Like GOTO in C
+	Type of Uncondition : 
+		- Near Jump ~Current Code segment
+			-128-127
+		
+		- Far Jump ~ Another code segment
+	
+
+	Condition - Jxx
+
+	- Jxx ../ JZ,JNZ,JA,JAE,JNC.....n 
+	- Uses Flags
+	- Not usges for Far Jump
+
+; Filename: Control.nasm
+; Author: N0N4M3
+
+
+global _start
+
+section .text
+
+_start:
+
+        jmp Begin
+
+NeverExecute:
+
+        mov eax, 0x10
+        xor ebx, ebx
+
+Begin:
+        mov eax, 0x5
+
+PrintHW:
+
+        push eax
+
+        mov eax, 0x4
+        mov ebx, 1
+        mov ecx, message
+        mov edx, mlen
+        int 0x80
+
+        pop eax
+        dec eax
+
+        jnz PrintHW
+
+
+        mov eax, 0x1
+        mov ebx, 0xa
+        int 0x80
+
+
+
+section .data
+
+   	message: db "Hello World!"
+        mlen     equ $-message
+
+
+
+
+
+
+
+
+
+
+LOOP Must use ECX register for count the repeat times
+
+
+Begin:
+        mov ecx, 0x5
+
+PrintHW:
+
+        push ecx
+
+        mov eax, 0x4
+        mov ebx, 1
+        mov ecx, message
+        mov edx, mlen
+        int 0x80
+
+        pop ecx
+        Loop PrintHW
+
+
+        mov eax, 0x1
+        mov ebx, 0xa
+        int 0x80
+
+
+
+
+
+Procedure: 
+
+ - Set of Operations Grouped together
+ - Called often from different palces in the code
+ - CALL Procedure name
+ - In NASM Procedure  are defile Using Lebels
+
+
+Format of a Procedure
+
+ProcedureName:
+	....code....
+	....code....
+	....code....
+	....code....
+	....code....
+	....code....
+	
+	RET
+
+
+note: When program run to call instruction
+the $eip register push value of next instruction into
+stack, 
+
+(gdb) disassemble 
+Dump of assembler code for function _start:
+=> 0x08048097 <+0>:	mov    ecx,0xa
+End of assembler dump.
+(gdb) info functions 
+All defined functions:
+
+Non-debugging symbols:
+0x08048080  HelloWorldProc
+0x08048097  _start
+0x0804809c  PrintHelloWorld
+0xb7fff6e0  __vdso_clock_gettime
+0xb7fff9f0  __vdso_gettimeofday
+0xb7fffb90  __vdso_time
+0xb7fffbc4  __kernel_sigreturn
+0xb7fffbd0  __kernel_rt_sigreturn
+0xb7fffbd8  __kernel_vsyscall
+(gdb) 
+
+
+
+
+
+NOTE: when call happen $eip push value into top of stack
+    - when ret  happen $eip pop value from  top of stack
+
+
+
+
+Argument to a Procedure
+
+-Passed via Register
+-Passed on Stack
+-Passed as data structures is memory
+--referenced by register / or on stack
+
+
+Save State:
+
+	Saving / Restoring Registers
+	-PUSHAD / POPAD
+
+	Saving / Restoring Flags
+	-PUSHFD / POPFD
+
+	Saving / Restoring
+	-ENTER / LEAVE + RET
+
+
+
+; Filename: Procedure2.nasm
+; Author: N0N4M3
+
+global _start
+
+section .text
+
+HelloWorldProc:
+	
+	push ebp
+
+	mov ebp, esp
+	
+	mov eax, 0x4
+	mov ebx, 0x1
+	mov ecx, message
+	mov edx, mlen
+	int 0x80
+
+	; mov esp, ebp
+	; pop ebp
+	
+	leave
+	ret
+
+_start:
+
+	mov ecx, 0xa
+
+PrintHelloWorld:
+	
+	pushad
+	pushfd
+	
+	call HelloWorldProc
+	
+	popfd
+	popad
+
+	loop PrintHelloWorld
+
+	mov eax, 0x1
+	mov ebx, 0xa
+	int 0x80
+
+
+
+
+
+section .data
+
+	message	db "Hello World!"
+	mlen	equ $-message
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

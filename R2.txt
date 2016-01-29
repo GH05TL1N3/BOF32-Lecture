@@ -1,0 +1,235 @@
+Unsigned Mul
+
+GDB
+(gdb) break *&_start +59 << set break point at mem add
+
+
+MUL Describt
+
+AL * r/m8 = AX [OF and CF is set(1) if upper hale is non-zero value]
+
+(gdb) nexti
+$1 = 0x0
+$2 = 0x0
+$3 = 0x0
+Dump of assembler code from 0x8048085 to 0x804808f:
+=> 0x08048085 <_start+5>:	mov    al,0x10
+   0x08048087 <_start+7>:	mov    bl,0x2
+   0x08048089 <_start+9>:	mul    bl
+   0x0804808b <_start+11>:	mov    al,0xff
+   0x0804808d <_start+13>:	mul    bl
+End of assembler dump.
+0x08048085 in _start ()
+(gdb) 
+(gdb) nexti
+$4 = 0x10
+$5 = 0x0
+$6 = 0x10
+Dump of assembler code from 0x8048087 to 0x8048091:
+=> 0x08048087 <_start+7>:	mov    bl,0x2
+   0x08048089 <_start+9>:	mul    bl
+   0x0804808b <_start+11>:	mov    al,0xff
+   0x0804808d <_start+13>:	mul    bl
+   0x0804808f <_start+15>:	mov    eax,0x0
+End of assembler dump.
+0x08048087 in _start ()
+(gdb) nexti
+$7 = 0x10
+$8 = 0x2
+$9 = 0x10
+Dump of assembler code from 0x8048089 to 0x8048093:
+=> 0x08048089 <_start+9>:	mul    bl
+   0x0804808b <_start+11>:	mov    al,0xff
+   0x0804808d <_start+13>:	mul    bl
+   0x0804808f <_start+15>:	mov    eax,0x0
+End of assembler dump.
+0x08048089 in _start ()
+(gdb) nexti
+$10 = 0x20
+$11 = 0x2
+$12 = 0x20
+Dump of assembler code from 0x804808b to 0x8048095:
+=> 0x0804808b <_start+11>:	mov    al,0xff
+   0x0804808d <_start+13>:	mul    bl
+   0x0804808f <_start+15>:	mov    eax,0x0
+   0x08048094 <_start+20>:	mov    ebx,0x0
+End of assembler dump.
+0x0804808b in _start ()
+(gdb) 
+(gdb) nexti
+$13 = 0xff
+$14 = 0x2
+$15 = 0xff
+Dump of assembler code from 0x804808d to 0x8048097:
+=> 0x0804808d <_start+13>:	mul    bl
+   0x0804808f <_start+15>:	mov    eax,0x0
+   0x08048094 <_start+20>:	mov    ebx,0x0
+End of assembler dump.
+0x0804808d in _start ()
+(gdb) print $eflags
+$16 = [ IF ]
+(gdb) nexti
+$17 = 0xfe
+$18 = 0x2
+$19 = 0x1fe
+Dump of assembler code from 0x804808f to 0x8048099:
+=> 0x0804808f <_start+15>:	mov    eax,0x0
+   0x08048094 <_start+20>:	mov    ebx,0x0
+End of assembler dump.
+0x0804808f in _start ()
+(gdb) print $eflags
+$20 = [ CF SF IF OF ]
+(gdb) 
+
+
+AX * r/m16 = AX|DX [OF and CF is set(1) if upper hale is non-zero value]
+EAX * r/m32 = EAX|EDX [OF and CF is set(1) if upper hale is non-zero value]
+
+Unsigned DIV
+
+AX / r/m16 = Q->AX | R->DX
+
+
+-------------------------------------------
+Logical Operation is ASM
+
+- AND r/m, r/m/imm (8,16,32 bits)
+- OR
+- XOR
+- NOT
+
+
+Bitwise Operation
+
+1 && 1 = 1
+
+0 || 0 = 0
+
+0 XOR 0 = 0
+0 XOR 1 = 1
+(gdb) disassemble 
+Dump of assembler code for function _start:
+=> 0x08048080 <+0>:	mov    al,0x10
+   0x08048082 <+2>:	and    al,0x1
+   0x08048084 <+4>:	and    BYTE PTR ds:0x80490d0,0xaa
+   0x0804808b <+11>:	and    WORD PTR ds:0x80490d1,0x1122
+   0x08048094 <+20>:	mov    al,0x10
+   0x08048096 <+22>:	or     al,0x1
+   0x08048098 <+24>:	or     BYTE PTR ds:0x80490d0,0xaa
+   0x0804809f <+31>:	mov    eax,0x0
+   0x080480a4 <+36>:	or     eax,0x0
+   0x080480a7 <+39>:	xor    DWORD PTR ds:0x80490d3,0x11223344
+   0x080480b1 <+49>:	xor    DWORD PTR ds:0x80490d3,0x11223344
+   0x080480bb <+59>:	mov    eax,0xffffffff
+   0x080480c0 <+64>:	not    eax
+   0x080480c2 <+66>:	not    eax
+   0x080480c4 <+68>:	mov    eax,0x1
+   0x080480c9 <+73>:	mov    ebx,0xa
+   0x080480ce <+78>:	int    0x80
+End of assembler dump.
+(gdb) display/x $al
+1: /x $al = 0x0
+(gdb) display/x $eax
+2: /x $eax = 0x0
+(gdb) define hook-stop
+Type commands for definition of "hook-stop".
+End with a line saying just "end".
+>x/xb &var1
+>x/xh &var2
+>x/xw &var3
+>disassemble $eip,+10
+>end
+(gdb) 
+(gdb) nexti
+0x80490d0:	0xaa
+0x80490d1:	0xbbcc
+0x80490d3:	0x11223344
+Dump of assembler code from 0x8048082 to 0x804808c:
+=> 0x08048082 <_start+2>:	and    al,0x1
+   0x08048084 <_start+4>:	and    BYTE PTR ds:0x80490d0,0xaa
+   0x0804808b <_start+11>:	and    WORD PTR ds:0x80490d1,0x1122
+End of assembler dump.
+0x08048082 in _start ()
+2: /x $eax = 0x10
+1: /x $al = 0x10
+(gdb) 
+0x80490d0:	0xaa
+0x80490d1:	0xbbcc
+0x80490d3:	0x11223344
+Dump of assembler code from 0x8048084 to 0x804808e:
+=> 0x08048084 <_start+4>:	and    BYTE PTR ds:0x80490d0,0xaa
+   0x0804808b <_start+11>:	and    WORD PTR ds:0x80490d1,0x1122
+End of assembler dump.
+0x08048084 in _start ()
+2: /x $eax = 0x0
+1: /x $al = 0x0
+(gdb) 
+
+
+
+
+
+same(num) xor same(num) = zero
+Zero xor Num = Num
+
+bbcc ~ 1111 so bbcc and 1122 is 1100
+
+aa and aa = 11 and 11 : the answer is aa
+
+Not 1 is 0
+Not 0 is 1
+
+Not 0xFFFFFFFF is same to Not 1
+
+so answer of Not 0xFFFFFFFF is 0
+
+Exsample :
+
+mov eax, 0xFFFFFFF
+not eax ~ now eax is 0
+
+and if you not eax again it value is 0xFFFFFFFF again
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,227 @@
+Shellcode Basic
+
+What is Shellcode?
+
+- Machine code with specific purpose
+	-spawn a local shell
+	-Bind to port and spawn shell
+	-create a new accout
+
+- Can be executed by CPU directly
+
+How to shellcode delivered
+
+ - Size of shellcode important (Smaller size is better)
+ - Bad character a concern (0x00 most common one)
+
+ - Added into an executable files
+   - run as separate thread
+   - replace executable functionality
+   - Size of shellcode not a concern
+
+
+
+objdump -d exit
+
+
+
+Disassembly of section .text:
+
+08048060 <_start>:
+ 8048060:	b8 01 00 00 00       	mov    $0x1,%eax
+ 8048065:	bb 0a 00 00 00       	mov    $0xa,%ebx
+ 804806a:	cd 80                	int    $0x80
+
+
+
+
+
+objdump -d exit -M intel
+
+Disassembly of section .text:
+
+08048060 <_start>:
+ 8048060:	b8 01 00 00 00       	mov    eax,0x1
+ 8048065:	bb 0a 00 00 00       	mov    ebx,0xa
+ 804806a:	cd 80                	int    0x80
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HELLOWORLD SHellcode
+
+using JMP-CALL-POP
+
+-----------modifying Hello World 
+
+Replace all 0x00 opcode instruction
+
+NO hardcode address
+ 	-dynamically figuer address of "Hello World"
+	 string
+
+
+
+
+
+jmp short call_shellcode
+
+
+shellcode:
+	............	............
+	............	............	
+	.........POP ECX............
+	............................
+
+
+call_shellcode:
+
+	call shellcode
+	message: db "Hello World!", 0xA
+
+
+
+
+
+
+
+Using the Stack
+
+- PUSH the value of the "Hello World!" string on the stack
+
+- GET a reference using ESP
+
+- String need to be pushed in stack in reverse as stack
+  grows from High to Low memory
+
+
+
+
+
+
+
+Execve Jmp Call pop
+
+
+initail string => "/bin/bashABBBBCCCC"
+
+1 = use jmp-call-pop to find the address of the string
+	use ESI for point to string address
+
+2 = convert "A" to "0x00"
+
+3 = convert "BBBB" to "/bin/bash" address
+
+4 = convert "CCCC" to null
+
+
+
+
+
+Execve Shellcode Stack method
+
+Stack push
+
+
+Low men-------------High Mem
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

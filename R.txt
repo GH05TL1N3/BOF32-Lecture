@@ -1,0 +1,378 @@
+Linux Assembly language x86 [lecher]
+
+
+GPR 
+
+[EAX 32] [AX 16] [AH AL 8] Accumulator - storing operand and result data
+[EBX 32] [BX 16] [BH BL 8] Base Register - point to data
+[ECX 32] [CX 16] [CH CL 8] Counter Register - Loop Operation
+[EDX 32] [DX 16] [DH DL 8] Data Register - I/O Pointer
+
+[ESP 32] [SP 16] Stack Pointer Register
+[EBP 32] [BP 16] Stack Data Pointer register 
+
+[ESI 32] [SI 16]- Data pointer register for memory operating
+[EDI 32] [DI 16]- Data pointer register for memory operating
+
+
+
+
+Segment Register
+
+CS -- code 
+DS -- data
+SS -- stack
+ES -- data
+FS -- data
+GS -- data
+15------0
+
+EIP
+31---------------------------0
+
+
+
+
+
+FPU
+SIMD
+
+
+LAB
+(gdb) info registers
+eax            0x81578c0	135624896
+ecx            0xbffff060	-1073745824
+edx            0xbffff084	-1073745788
+ebx            0xb7f94000	-1208401920
+esp            0xbffff038	0xbffff038
+ebp            0xbffff048	0xbffff048
+esi            0x0	0
+edi            0x8063096	134623382
+eip            0x8061881	0x8061881 <main+17>
+eflags         0x286	[ PF SF IF ]
+cs             0x73	115
+ss             0x7b	123
+ds             0x7b	123
+es             0x7b	123
+fs             0x0	0
+gs             0x33	51
+
+
+(gdb) display /x $eax
+1: /x $eax = 0x81578c0
+(gdb) display /x $ax
+2: /x $ax = 0x78c0
+(gdb) display /x $ah
+3: /x $ah = 0x78
+(gdb) display /x $al
+4: /x $al = 0xc0
+(gdb) 
+
+(gdb) set disassembly-flavor intel
+(gdb) 
+
+
+(gdb) info registers
+eax            0x81578c0	135624896
+ecx            0xbffff060	-1073745824
+edx            0xbffff084	-1073745788
+ebx            0xb7f94000	-1208401920
+esp            0xbffff038	0xbffff038
+ebp            0xbffff048	0xbffff048
+esi            0x0	0
+edi            0x8063096	134623382
+eip            0x8061881	0x8061881 <main+17>
+eflags         0x286	[ PF SF IF ]
+cs             0x73	115
+ss             0x7b	123
+ds             0x7b	123
+es             0x7b	123
+fs             0x0	0
+gs             0x33	51
+(gdb) disassemble main
+Dump of assembler code for function main:
+   0x08061870 <+0>:	lea    ecx,[esp+0x4]
+   0x08061874 <+4>:	and    esp,0xfffffff0
+   0x08061877 <+7>:	push   DWORD PTR [ecx-0x4]
+   0x0806187a <+10>:	push   ebp
+   0x0806187b <+11>:	mov    ebp,esp
+   0x0806187d <+13>:	push   edi
+   0x0806187e <+14>:	push   esi
+   0x0806187f <+15>:	push   ebx
+   0x08061880 <+16>:	push   ecx
+=> 0x08061881 <+17>:	sub    esp,0x140
+   0x08061887 <+23>:	mov    eax,DWORD PTR [ecx]
+   0x08061889 <+25>:	mov    DWORD PTR [ebp-0x100],eax
+   0x0806188f <+31>:	mov    eax,DWORD PTR [ecx+0x4]
+   0x08061892 <+34>:	mov    DWORD PTR [ebp-0xfc],eax
+   0x08061898 <+40>:	mov    eax,DWORD PTR [ecx+0x8]
+   0x0806189b <+43>:	push   0x0
+   0x0806189d <+45>:	push   0x815c480
+   0x080618a2 <+50>:	mov    DWORD PTR [ebp-0x104],eax
+   0x080618a8 <+56>:	mov    eax,gs:0x14
+   0x080618ae <+62>:	mov    DWORD PTR [ebp-0x1c],eax
+   0x080618b1 <+65>:	xor    eax,eax
+   0x080618b3 <+67>:	call   0x8060990 <__sigsetjmp@plt>
+   0x080618b8 <+72>:	add    esp,0x10
+   0x080618bb <+75>:	test   eax,eax
+   0x080618bd <+77>:	jne    0x8061e18 <main+1448>
+   0x080618c3 <+83>:	call   0x8072ce0 <xtrace_init>
+   0x080618c8 <+88>:	call   0x806fae0 <check_dev_tty>
+   0x080618cd <+93>:	jmp    0x80618dd <main+109>
+   0x080618cf <+95>:	nop
+---Type <return> to continue, or q <return> to quit---q
+Quit
+
+
+
+
+Virtual Memory MOdel
+
+----------------
+1GB > Kernel
+----------------
+3GB > User Space
+----------------
+
+0xffffffff
+-------kernel space--------
+0xc0000000
+----------------------
+----------stack-------
+----------------------
+0x08048000
+-------------------
+Shared Libs + Mappings
+-------------------
+Heap -------------------- Dynamic Memory
+-------------------
+Bss  -------------------- Uninlitialized Data
+-------------------
+Data -------------------- Initialized Data
+-------------------
+Text -------------------- Program code
+-------------------
+0x00000000 
+
+
+
+palmxx@palmxx-vm:~$ cat /proc/4354/maps
+08048000-08152000 r-xp 00000000 08:01 262152     /bin/bash
+08152000-08153000 r--p 00109000 08:01 262152     /bin/bash
+08153000-08158000 rw-p 0010a000 08:01 262152     /bin/bash
+08158000-0815d000 rw-p 00000000 00:00 0 
+091ed000-09352000 rw-p 00000000 00:00 0          [heap]
+b7314000-b7320000 r-xp 00000000 08:01 918850     /lib/i386-linux-gnu/libnss_files-2.21.so
+b7320000-b7321000 r--p 0000b000 08:01 918850     /lib/i386-linux-gnu/libnss_files-2.21.so
+b7321000-b7322000 rw-p 0000c000 08:01 918850     /lib/i386-linux-gnu/libnss_files-2.21.so
+b7322000-b732d000 r-xp 00000000 08:01 918860     /lib/i386-linux-gnu/libnss_nis-2.21.so
+b732d000-b732e000 r--p 0000a000 08:01 918860     /lib/i386-linux-gnu/libnss_nis-2.21.so
+b732e000-b732f000 rw-p 0000b000 08:01 918860     /lib/i386-linux-gnu/libnss_nis-2.21.so
+b732f000-b7346000 r-xp 00000000 08:01 918844     /lib/i386-linux-gnu/libnsl-2.21.so
+b7346000-b7347000 r--p 00016000 08:01 918844     /lib/i386-linux-gnu/libnsl-2.21.so
+b7347000-b7348000 rw-p 00017000 08:01 918844     /lib/i386-linux-gnu/libnsl-2.21.so
+b7348000-b734a000 rw-p 00000000 00:00 0 
+b734a000-b7352000 r-xp 00000000 08:01 918846     /lib/i386-linux-gnu/libnss_compat-2.21.so
+b7352000-b7353000 r--p 00007000 08:01 918846     /lib/i386-linux-gnu/libnss_compat-2.21.so
+b7353000-b7354000 rw-p 00008000 08:01 918846     /lib/i386-linux-gnu/libnss_compat-2.21.so
+b7369000-b7569000 r--p 00000000 08:01 665364     /usr/lib/locale/locale-archive
+b7569000-b756a000 rw-p 00000000 00:00 0 
+b756a000-b771e000 r-xp 00000000 08:01 918761     /lib/i386-linux-gnu/libc-2.21.so
+b771e000-b7721000 r--p 001b3000 08:01 918761     /lib/i386-linux-gnu/libc-2.21.so
+b7721000-b7723000 rw-p 001b6000 08:01 918761     /lib/i386-linux-gnu/libc-2.21.so
+b7723000-b7726000 rw-p 00000000 00:00 0 
+b7726000-b7729000 r-xp 00000000 08:01 918780     /lib/i386-linux-gnu/libdl-2.21.so
+b7729000-b772a000 r--p 00002000 08:01 918780     /lib/i386-linux-gnu/libdl-2.21.so
+b772a000-b772b000 rw-p 00003000 08:01 918780     /lib/i386-linux-gnu/libdl-2.21.so
+b772b000-b774b000 r-xp 00000000 08:01 918923     /lib/i386-linux-gnu/libtinfo.so.5.9
+b774b000-b774e000 r--p 0001f000 08:01 918923     /lib/i386-linux-gnu/libtinfo.so.5.9
+b774e000-b774f000 rw-p 00022000 08:01 918923     /lib/i386-linux-gnu/libtinfo.so.5.9
+b774f000-b7756000 r--s 00000000 08:01 663103     /usr/lib/i386-linux-gnu/gconv/gconv-modules.cache
+b7756000-b7757000 r--p 005e0000 08:01 665364     /usr/lib/locale/locale-archive
+b7757000-b7764000 r--p 00858000 08:01 665364     /usr/lib/locale/locale-archive
+b7764000-b7766000 rw-p 00000000 00:00 0 
+b7766000-b7768000 r--p 00000000 00:00 0          [vvar]
+b7768000-b7769000 r-xp 00000000 00:00 0          [vdso]
+b7769000-b778b000 r-xp 00000000 08:01 918733     /lib/i386-linux-gnu/ld-2.21.so
+b778b000-b778c000 r--p 00021000 08:01 918733     /lib/i386-linux-gnu/ld-2.21.so
+b778c000-b778d000 rw-p 00022000 08:01 918733     /lib/i386-linux-gnu/ld-2.21.so
+bfa56000-bfa77000 rw-p 00000000 00:00 0          [stack]
+palmxx@palmxx-vm:~$ 
+
+
+
+
+
+
+Programming in ASM
+
+
+
+Hello World
+
+Programming in ASM Need in TEXT section in memory
+
+
+; HelloWorld.asm
+; Author : N0N4M3
+
+
+
+global _start
+
+section .text
+
+_start:
+        ;print hello world on the screen
+
+        mov eax, 0x4
+        mov ebx, 0x1
+        mov ecx, message
+        mov edx, mlen
+        int 0x80
+
+        ;exit the program
+
+        mov eax, 0x1
+        mov ebx, 0x5
+        int 0x80
+
+section .data
+
+
+        message: db "Hello World!"
+        mlen     equ $-message
+
+
+
+
+GDB command  
+-define hook-stop
+-display/x $eax blah blah blah
+-info functions
+-info variables
+-break 
+-info registers 
+-set disassembly-flavor intel
+-stepi
+-disassemble 
+-/x
+-x/s
+
+Signed and Unsigned
+
+-30----------------------------0 unsign
+31-30--------------------------0 signed
+
+
+
+NASM SYNTAX
+
+-Case sensitive
+'message: db 0xAA, 0xBB, 0xCC, 0xDD
+ mov eax, message -- move address into eax
+ mov eax, [message] -- move value into eax
+
+Byte = 8 bit
+word = 16 bit
+Dword = 32 bit
+Qword = 64 bit
+DQWord = 128 bit
+
+
+nasm data type
+
+initialized data
+db
+dw
+dd
+dq
+dt
+
+
+uninitialized data
+resb
+resw
+
+
+Special Token
+
+$ - evaluates to current line
+$$ - evaluates to beginning of current section
+
+
+EQU and TIMES
+
+msg	db	"hello world"
+msglen	equ	$-msg
+
+zerobuf		times 64 db 0
+
+times 100 movsb
+
+
+
+little endians
+
+
+
+
+GDB 
+
+
+MOV Instruction
+-between Registers
+-Mem to Reg and Reg to Mem
+-IM data to Reg
+-IM data to Mem
+
+
+LEA - Load Effect Address [load pointer values]
+
+LEA EAX, [label]
+
+
+
+XCHG -- Exchanges (swaps) Values
+
+XCHG  Reg, Reg
+XCHG  Reg, Mem
+
+
+
+Stack ---
+
+
+Stack is A LIFO
+
+-----ESP << point to top of the stack (Automatic pointing)
+-----PUSH << Push Value onto stack
+-----POP << Remove data topmost from stack
+
+
+
+
+
+ASM Arithmetic
+
+ADD des,src
+ADC des,src (carry flag)
+SUB and SBB
+INC and DEC
+
+eflags Register
+
+SF - Sign Flag
+ZF - Zero Flag
+AF - Auxiliary Flag
+PF - Parity Flag
+CF - Carry Flag
+
+
+
+
+
+
+
+
+
